@@ -16,7 +16,7 @@ The intent of this project is to keep the runtime as lean as possible so we're n
 libraries and only the most basic JDK modules. Because of this goal you may notice REST API calls are 
 handled using plain old Java UrlConnection and not Apache HttpClient as you'd typically expect. 
 
-#####What's supported
+##### What's supported
 * Request/Response Style Invocation
 * Handler code deployed as either Jars or Zip
 
@@ -24,7 +24,7 @@ Using class path scanning we can match the loading process of the offical AWS Ja
 a Zip File or a Jar as documented by the official Lambda Docs:
 https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 
-#####What's Not Supported
+##### What's Not Supported
 * Streaming invocation ie. Kinesis
 * Json Marshalling
 * Context support 
