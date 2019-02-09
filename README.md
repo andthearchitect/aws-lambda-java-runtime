@@ -57,7 +57,7 @@ attempt to run the image.
 ## Building the Runtime
 
 
-#####Compile the Runtime classes
+##### Compile the Runtime classes
 Make sure you have Java 11 configured as your JDK, then run Gradle Build. Note that you'll also need Gradle 5.0 or 
 later to build Java 11 project.
 
