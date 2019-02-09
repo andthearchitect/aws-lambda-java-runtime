@@ -97,24 +97,23 @@ our runtime binaries so if you wanted to debug the runtime you'd want to build w
 debug symbols on handler code uploaded to the lambda function which uses this runtime.
 
 
-##### Create the Lambda Custom Runtime Entry Point
+#### Create the Lambda Custom Runtime Entry Point
 
 We're going to create a shell script to launch our application. AWS Lambda Custom Runtimes look for an executable file  
 in the root directory named simply ```bootstrap```. This can be any executable file, for our case we're going to just use
 a shell script to call our launcher that we created in the step above. 
 
-**Create the bootstrap script**
+###### Create the bootstrap script
 ```
 $touch boostrap
 ```
-
-**Add the following contents to bootstrap**
+###### Add the following contents to bootstrap
 ```$bash
 #!/bin/sh
 /opt/dist/bin/bootstrap
 ```
 
-**Make the file executable**
+###### Make the file executable
 ```
 $chmod +x bootstrap
 ```
@@ -143,13 +142,13 @@ which contains both of these artifacts so our hierarchy looks like this:
     - ...
 ```
 
-**Zip the above into a file named function.zip**
+###### Zip the above into a file named function.zip
 
 ```
 zip -r function.zip *
 ```
 
-**Push the layer to AWS**
+###### Push the layer to AWS
 ```
 aws lambda publish-layer-version --layer-name Java-11 --zip-file fileb://function.zip
 ```
