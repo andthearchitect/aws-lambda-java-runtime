@@ -1,0 +1,3 @@
+module com.ata.lambda {
+
+}
