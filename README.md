@@ -54,19 +54,18 @@ Since we will be basically building an executable, we need to be able to link ou
 Make sure you have the following installed on your build machine before getting started. 
 * OpenJDK 11 for your OS
 * OpenJDK 11 for Linux (See note above)
-* Gradle 5+ (Required to build Java 11 Projects)
 * AWS CLI
 
 ##### Compile the Runtime Classes
 
+Run the Gradle Build included with this project. NOTE that Gradle 5.0 or greater is required to build Java 11+ projects. 
 ```
 $ ./gradlew build
 ```
 ##### Linking the Runtime Image
 
-As stated above, you'll need the JDK for Linux to link our module against. Download the Java 11 JDK for linux
-and unzip it somewhere on your machine. Replace ```<path-to-linux-jdk>``` in the command below with the path
-to the unzipped Linux JDK then run the linker.
+As stated above, you'll need the JDK for Linux to link our module against. If you haven't already, download the Java 11 JDK for linux and unzip it somewhere on your machine. Replace ```<path-to-linux-jdk>``` in the command below with the path
+to the unzipped Linux JDK then run the linker. Make sure you're using the same Major/Minor versions of both your build JDK and the target JDK to eliminate potential incompatibilities. 
 
  ```
  $ jlink --module-path ./build/libs:<path-to-linux-jdk>/jmods \
@@ -107,14 +106,13 @@ a shell script to call our launcher that we created in the step above. This scri
 $ touch boostrap
 ```
 ##### Call our Java Runtime from Bash
-Add the following commands to ```bootstrap```
+Add the following commands to the ```bootstrap```
 ```$bash
 #!/bin/sh
 /opt/dist/bin/bootstrap
 ```
 
-Note that the path we're using in our shell script is ```/opt```. When you create a Lambda Layer, as we'll do shortly, AWS Lambda 
-copies all the runtime files to the /opt directory.  
+Note that the path we're using in our shell script is ```/opt```. When you create a Lambda Layer, as we'll do shortly, AWS Lambda copies all the runtime files to the ```/opt``` directory. This directory is efficvely the home directory for our custom runtime. 
 
 ##### Make bootstrap executable
 ```
@@ -131,9 +129,7 @@ The deployment package needs to have ```bootstrap``` at the root level and we'll
 containing our Java 11 Runtime Image we built with ```jlink``` above. 
 
 Create a folder which contains both of these artifacts, ```bootstrap``` and ```dist```, so we can package them
-as a Layer.
-
-The deployment hierarchy should like this: 
+as a Layer. The deployment hierarchy should like this: 
 
 ```
 - bootstrap
@@ -176,7 +172,7 @@ The rest of this guide assumes you are already familiar with building Lambda Fun
 section of the official AWS Lambda documentation.
 
 ##### Sample Java Handler using Var
-To prove that this is all working create a sample Lambda Function using the Java 'var' keyword added in Java 10. This code would not execute on the official Java 8 Lambda Runtime provided by Amazon, but will work on our Lambda.  
+To prove that this is all working, create a sample Lambda Function using the Java 'var' keyword added in Java 10. This code would not execute on the official Java 8 Lambda Runtime provided by Amazon, but will work on our Lambda.  
 
 ```java
 public class SampleLambdaHandler {
@@ -195,6 +191,7 @@ public class SampleLambdaHandler {
 Compile and package this into either a ```jar``` or a  ```zip``` file and upload it to a new lambda function. 
 Assuming you named your deployment ```handler.zip```, you could create a new Lambda Function as follows:
 
+##### Create a New Lambda Function
 ```
 $ aws lambda create-function --function-name testJavaHandler \
 --zip-file fileb://handler.zip --handler SampleLambdaHandler::myHandler --runtime provided \
@@ -202,6 +199,27 @@ $ aws lambda create-function --function-name testJavaHandler \
 
 ```
 NOTE: You'll need to replace the IAM role above with the ARN of your Lambda IAM role.
+
+##### Attach the Java 11 Runtime Layer
+You'll notice we used ```--runtime provided``` in the command above to tell AWS that we're using a custom runtime. But since we're not packaging our ```bootstrap``` file with our deployment package we'll need to attach the Layer we created earlier which contains our custom runtime to this Lambda Function
+
+For this step you'll need the arn of your Java 11 Custom Runtime Layer and its version nunmber. You should have seen that in the output of the command we used to create it earlier or you can run the following command to list your available layers. You will be able to find the ARN in the response under the field ```LayerVersionArn```
+
+```
+$ aws lambda list-layers
+```
+The ARN for our lambda should look something like this
+
+```arn:aws:lambda:us-east-1:<account-id>:layer:Java-11:1```
+
+Where account-id is your AWS accound and the number on the end is the version of the Layer. Evertime you update or publish a layer that version number will increase. 
+
+Now that we have the ARN for our Layer we can update our Lambda function
+```
+$ aws lambda update-function-configuration --function-name testJavaHandler --layers arn:aws:lambda:us-east-1:<account-id>:layer:Java-11:1
+```
+
+Replace the ARN in the --layers parameter in the command above with the ARN of your Java 11 Layer. 
 
 ##### Execute the Lambda. 
 
