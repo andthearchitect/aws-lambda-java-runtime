@@ -212,7 +212,7 @@ The ARN for our lambda should look something like this
 
 ```arn:aws:lambda:us-east-1:<account-id>:layer:Java-11:1```
 
-Where account-id is your AWS accound and the number on the end is the version of the Layer. Evertime you update or publish a layer that version number will increase. 
+Where account-id is your AWS account and the number on the end is the version of the Layer. Evertime you update or publish a layer that version number will increase. 
 
 Now that we have the ARN for our Layer we can update our Lambda function
 ```
