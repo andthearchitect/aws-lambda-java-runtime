@@ -10,13 +10,9 @@ The goal of this project is to create an [AWS Lambda Custom Runtime](https://doc
 for Java to enable support of Java releases beyond the official AWS provided Runtimes.
 
 This project will lay the foundation for future versions of Java to be supported
-as they are released by implementing the [AWS Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html)
- starting with the latest LTS release, Java 11.  
+as they are released by implementing the [AWS Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html) starting with the latest LTS release, Java 11.  
 
-By design, this project makes use of no 3rd party libraries with the intent of keeping the runtime as lean as possible. To aid in this goal, 
-this project intends to leverage Java's new module system and linking process to create a stand alone Java runtime image containing only 
-the base JDK features needed to implement the Lambda Runtime API. In addition, it is the aim of this project to reduce the cost of
-Lambda "cold starts" by leveraging the module system in addition to keeping the runtime as lean as possible. 
+By design, this project makes use of no 3rd party libraries with the intent of keeping the runtime as lean as possible. To aid in this goal, this project intends to leverage Java's new module system and linking process to create a stand alone Java runtime image containing only the base JDK features needed to implement the Lambda Runtime API. In addition, it is the hope of this project that leveraging a lean runtime and modular deployment can reduce the cost of Lambda "cold starts". 
 
 
 ##### What's supported
@@ -32,13 +28,9 @@ https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 * Json Marshalling
 * Context support 
 
-Since this is a currently just a POC, only Request/Response style lambda invocations are currently supported. Request/Response style 
-invocation what you typically find in a serveries application. Alternatively Lambda can be invoked using streaming invocation
-for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. 
+Since this is a currently just a POC, only Request/Response style lambda invocations are currently supported. Request/Response style invocation what you typically find in a serverless application. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. 
 
-Only Handlers which take a simple Object as their input parameter are currently supported. The official runtime supports a multitude 
-of overloaded functions and does some POJO marshalling of Json. For the sake of time, this project only supports a 
-simple object. Adding support for overloads, especially the Context parameter is fairly trivial and may be added later. 
+Currently only Handlers which take a simple Object as their input parameter are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. To keep the scope simple for POC purposes and the limitte the need for 3rd party libraries ie. Jackson, this project only supports Handlers which accept a single object parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
 
 ### Building the Runtime
 
@@ -47,7 +39,7 @@ runtime as a stand alone Java image. This has the advantage of vastly reducing t
 well as simplifying deployment. It also means we're no longer required to have Java installed on the target
 machine and can specify our own version.  
 
-Before we start, just a quick note on packaging a stand alone Java im as it can be a little confusing. 
+Before we start, just a quick note on packaging a stand alone Java image as it can be a little confusing. 
 In order to create a stand alone image you need both the JDK for your OS and the 
 JDK (or at least the jmods directory) for the target architecture of the system intended 
 to run the image. Since our intended target is AWS Linux which Amazon uses for Lambda environments, we'll need the 
@@ -72,7 +64,7 @@ $ ./gradlew build
 ##### Linking the Runtime Image
 
 As stated above, you'll need the JDK for Linux to link our module against. Download the Java 11 JDK for linux
-and unzip it somewhere on your machine. Replace <path-to-linux-jdk> in the command below with the path
+and unzip it somewhere on your machine. Replace ```<path-to-linux-jdk>``` in the command below with the path
 to the unzipped Linux JDK then run the linker.
 
  ```
@@ -83,21 +75,21 @@ to the unzipped Linux JDK then run the linker.
     --compress 2 --no-header-files --no-man-pages --strip-debug
 ```
 
-What we're doing above is using the ```jlink``` tool included with the latest JDKs to link our module to the JDK modules 
-it's dependent upon to include only those dependencies in our image. This creates a stand alone distribution which can 
+What we're doing here is using the ```jlink``` tool included with the latest JDKs to link our module to the JDK modules 
+it's dependent upon to include only those dependencies in our image. This creates a small stand alone distribution which can 
 be run on any machine without requiring Java to be installed.  
 
-Here's a breakdown of what we're doing in the command above. 
+Here's a breakdown of the ```jlink``` parameters above:
 
 **--module-path:** Links our module and the Linux JDK Runtime modules to link the built in Java classes we're 
 dependent upon in our code, ie. UrlConnection, Map, System etc.
 
+**--add-modules:** Add our module as defined in ```module-info.java```
+
 **--output:** Put everything in an output folder named ```dist``` relative to the cwd. This folder will contain
 our stand alone Java Runtime with our Lambda Module embedded. 
 
-**--launcher:** Create a launcher file called "bootstrap" which will be an file executable that invokes our main method directly. 
-This means to run our application all we need to do is execute bootstrap like any other binary ie. ```$./bin/boostrap```. 
-This removes the need to specify classpaths, modules etc. as you'd typically need to do when you run a jar file.
+**--launcher:** Create a launcher file called "bootstrap" which will be an file executable that invokes our main method directly. This means to run our application all we need to do is execute bootstrap like any other binary ie. ```$ ./bin/bootstrap```. This removes the need to specify classpaths, modules etc. as you'd typically need to do when you run a jar file.
 
 **Everything else:** The other parameters included are intended to cut down on the size of our deployment. Note we're stripping debug symbols from
 our runtime binaries so if you wanted to debug the runtime you'd want to build without this setting. This will not affect
@@ -131,13 +123,13 @@ $ chmod +x bootstrap
 #### Deploying the Custom Runtime as a Layer
 
 We should now have everything we need to deploy a Custom Runtime. We could just package all of this with a Handler 
-function and call it a day, but a better practice is to take advantage Layers. When we create a Custom Runtime as 
+function and call it a day, but a better practice is to take advantage of Layers. When we create a Custom Runtime as 
 a Layer it can be reused with any Lambda function.  
 
-The deployment package needs to have ```bootstrap``` at the root level and we'll include our the folder 
+The deployment package needs to have ```bootstrap``` at the root level and we'll include the folder 
 containing our Java 11 Runtime Image we built with ```jlink``` above. 
 
-Create a folder which contains both of these artifacts, ```bootstrap``` and ```dist``` so we can package them
+Create a folder which contains both of these artifacts, ```bootstrap``` and ```dist```, so we can package them
 as a Layer.
 
 The deployment hierarchy should like this: 
@@ -158,7 +150,7 @@ You'll need all of these files so make sure you include the full ```dist``` fold
 
 ##### Create a deployment package
 
-Create a zip containing our runtime files. 
+In the root of the folder containing our ```bootstrap``` and ```dist``` files, create a zip archive containing the artifacts. 
 
 ```
 $ zip -r function.zip *
@@ -183,17 +175,15 @@ The rest of this guide assumes you are already familiar with building Lambda Fun
 section of the official AWS Lambda documentation.
 
 ##### Sample Java Handler using Var
-To prove that this is all working let's create a sample Lambda Function using hte new Java 'var' keyword
-which was added in Java 10. This could would not run on the official Java 8 Lambda Runtime provided by Amazon, but 
-will work on our Lambda.  
+To prove that this is all working create a sample Lambda Function using the Java 'var' keyword added in Java 10. This code would not execute on the official Java 8 Lambda Runtime provided by Amazon, but will work on our Lambda.  
 
 ```java
 public class SampleLambdaHandler {
 
     public String myHandler(Object input) {
 
-        var java11Var = " Hello var keyword";
-        System.out.println("Logging a Java 'var'" + java11Var);
+        var java11Var = "Hello var keyword";
+        System.out.println("Logging a Java 'var': " + java11Var);
 
         return "I'm a Java handler";
     }
@@ -201,27 +191,27 @@ public class SampleLambdaHandler {
 
 ```
 
-Package this into either a ```jar``` or a  ```zip``` file and upload it to a new lambda function. 
+Compile and package this into either a ```jar``` or a  ```zip``` file and upload it to a new lambda function. 
 Assuming you named your deployment ```handler.zip```, you could create a new Lambda Function as follows:
 
 ```
 $ aws lambda create-function --function-name testJavaHandler \
---zip-file fileb://handler.zip --handler SampleLambdaHandler::myHandler--runtime provided \
+--zip-file fileb://handler.zip --handler SampleLambdaHandler::myHandler --runtime provided \
 --role arn:aws:iam::<your-account>:role/lambda-role
 
 ```
+NOTE: You'll need to replace the IAM role above with the ARN of your Lambda IAM role.
 
 ##### Execute the Lambda. 
 
 Now let's test the new function and our custom runtime. We can do this from the command line with the 
-following command. Note: I've added a little extra to display the log messages on the console and 
+following command. I've added a little extra command line magic to display the log messages on the console. 
 "response.txt" will hold the results of the invocation. 
-
 
 ```
 $ aws lambda invoke --function-name testJavaHandler  --payload '{"message":"Hello World"}' --log-type Tail response.txt | grep "LogResult"| awk -F'"' '{print $4}' | base64 --decode
 START RequestId: e5f273a6-e2bf-44a6-bacd-c281dfb14061 Version: $LATEST
-Logging a Java 'var' Hello var keyword
+Logging a Java 'var': Hello var keyword
 END RequestId: e5f273a6-e2bf-44a6-bacd-c281dfb14061
 REPORT RequestId: e5f273a6-e2bf-44a6-bacd-c281dfb14061	Init Duration: 427.65 ms	Duration: 132.56 ms	Billed Duration: 600 ms 	Memory Size: 512 MB	Max Memory Used: 67 MB	
 ```
@@ -232,8 +222,7 @@ REPORT RequestId: e5f273a6-e2bf-44a6-bacd-c281dfb14061	Init Duration: 427.65 ms	
 I'm a Java handler
 ```
 
-
-
+It works! Now you can build Lambda Functions using Java 11. Enjoy!
 
 
 
