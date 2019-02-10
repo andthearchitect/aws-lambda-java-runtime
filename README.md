@@ -12,40 +12,41 @@ for Java to enable support of Java releases beyond the official AWS provided Run
 This project will lay the foundation for future versions of Java to be supported
 as they are released by implementing the [AWS Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html) starting with the latest LTS release, Java 11.  
 
-By design, this project makes use of no 3rd party libraries with the intent of keeping the runtime as lean as possible. To aid in this goal, this project intends to leverage Java's new module system and linking process to create a stand alone Java runtime image containing only the base JDK features needed to implement the Lambda Runtime API. In addition, it is the hope of this project that leveraging a lean runtime and modular deployment can reduce the cost of Lambda "cold starts". 
+#### Primary Goals
+* Lean Runtime
+* Ease of Supporting New Java Versions
+* Improved Performance of Java Lambda Functions
+
+The aim of this project is to keep the run time as lean as possible. To aid in this goal, this project intends to leverage Java's new module system and linking process to create a stand alone Java runtime image containing only the base JDK dependencies required to implement the Lambda Runtime API. In addition, this project does not use any third party libraries to further reduce the footprint of the runtime. It is the hope of this project that leveraging a lean runtime and modular deployment can reduce the cost of the Lambda "cold starts". 
 
 
-##### What's supported
+##### What's Supported
 * Request/Response Style Invocation
-* Handler code deployed as either Jars or Zip
+* Function code deployments as either Jars or Zip
 
 Using class path scanning we can match the loading process of the offical AWS Java Runtime to load Handler code as either
 a Zip File or a Jar as documented by the official Lambda Docs:
 https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 
-##### What's Not Supported
+##### What's Not Currently Supported
 * Streaming invocation ie. Kinesis
 * Json Marshalling
 * Context support 
 
-Since this is a currently just a POC, only Request/Response style lambda invocations are currently supported. Request/Response style invocation what you typically find in a serverless application. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. 
+Since this is a currently just a POC, only Request/Response style lambda invocations are currently supported. Request/Response style invocation what you typically find in a serverless application. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. This project may explore streaming invocation at a later time. 
 
-Currently only Handlers which take a simple Object as their input parameter are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. To keep the scope simple for POC purposes and the limitte the need for 3rd party libraries ie. Jackson, this project only supports Handlers which accept a single object parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
+Currently, only Handlers which take a simple Object as their input parameter are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. See [Handler Input/Output Types](https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-req-resp.html) in the official Lambda documentation. 
+To keep the scope simple for POC purposes and the remove the need for third party libraries ie. Jackson, this project only supports Handlers which accept a single object parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
 
-### Building the Runtime
+### Building this Runtime
 
-We're going to take advantage of the new Java Modules feature (Project Jigsaw) to package our 
-runtime as a stand alone Java image. This has the advantage of vastly reducing the footprint of our Runtime as 
-well as simplifying deployment. It also means we're no longer required to have Java installed on the target
-machine and can specify our own version.  
+The following sections describe how to build and assemble a Custom Runtime for AWS Lambda. We will assume a reasonablle familarity with AWS Lambda and Custom Runtimes. Please see the offical AWS Documentation for [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and [AWS Lambda Runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for more details. 
 
-Before we start, just a quick note on packaging a stand alone Java image as it can be a little confusing. 
-In order to create a stand alone image you need both the JDK for your OS and the 
-JDK (or at least the jmods directory) for the target architecture of the system intended 
-to run the image. Since our intended target is AWS Linux which Amazon uses for Lambda environments, we'll need the 
-modules from the 64bit Linux JDK to link against. If we're compiling on a non-linux system ie. Mac or Windows, we'll
-need both the JDK for our OS and the Linux JDK. Otherwise if you link to the wrong architecture you'll get an error when 
-attempt to run the image.
+As mentioned in the Objective, this project will take advantage of the new Java Modules feature (Project Jigsaw) to package the runtime as a stand alone Java image. This has the advantage of vastly reducing the Runtime's footprint as 
+well as simplifying the deployment process. As a result of the new deployment system, Java is no longer required to be pre-installed on the execution environment. The deployment will be compeltley self contained allowing for any version of Java to be deployed on Lambda.
+
+Before we start, just a quick note on building stand alone Java images as there are some gotchas. 
+Since we will be basically building an executable, we need to be able to link our modules to the target environment's JDK rather than the JDK of our build environment. Since our intended target is AWS Linux which Amazon uses for Lambda environments, we'll need the modules from the 64bit Linux JDK to link against. If we're compiling on a non-linux system ie. Mac or Windows, we'll need both the JDK for our development environment and the Linux JDK. Otherwise if you link to the wrong architecture you'll get an error when attempt to run the image.
  
 
 #### Prerequisites 
