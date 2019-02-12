@@ -6,11 +6,9 @@
 If you decided to run this on production systems you do so at your own risk.*
 
 ### Objective
-The goal of this project is to create an [AWS Lambda Custom Runtime](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html) 
-for Java to enable support of Java releases beyond the official AWS provided Runtimes.
+The goal of this project is to create an [AWS Lambda Custom Runtime](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-custom.html) to enable support of Java releases beyond the official AWS provided Runtimes.
 
-This project will lay the foundation for future versions of Java to be supported
-as they are released by implementing the [AWS Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html) starting with the latest LTS release, Java 11.  
+This project will lay the foundation for future versions of Java to be supported as they are released by implementing the [AWS Lambda Runtime API](https://docs.aws.amazon.com/lambda/latest/dg/runtimes-api.html) starting with the latest LTS release, Java 11.  
 
 #### Primary Goals
 * Lean Runtime
@@ -21,22 +19,25 @@ The aim of this project is to keep the run time as lean as possible. To aid in t
 
 
 ##### What's Supported
-* Request/Response Style Invocation
+* Synchronous Request/Response Style Invocation
+* Simple Input Types (Object, String, Primitive)
 * Function code deployments as either Jars or Zip
+* Environment Variables
 
 Using class path scanning we can match the loading process of the offical AWS Java Runtime to load Handler code as either
 a Zip File or a Jar as documented by the official Lambda Docs:
 https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 
 ##### What's Not Currently Supported
-* Streaming invocation ie. Kinesis
-* Json Marshalling
-* Context support 
+* Asynchronous Invocation ie. Kinesis
+* Advanced Input Types (Lists, Maps, Streams, POJOs)
+* Context Support
+* Congito Identity
 
-Since this is a currently just a POC, only Request/Response style lambda invocations are currently supported. Request/Response style invocation what you typically find in a serverless application. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. This project may explore streaming invocation at a later time. 
+Only Request/Response style Lambda invocations are currently supported. Request/Response style invocations are what you typically find in a serverless application, for example when inoking a Lambda via Api Gateway. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. This project may explore streaming invocation at a later time. 
 
-Currently, only Handlers which take a simple Object as their input parameter are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. See [Handler Input/Output Types](https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-req-resp.html) in the official Lambda documentation. 
-To keep the scope simple for POC purposes and the remove the need for third party libraries ie. Jackson, this project only supports Handlers which accept a single object parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
+Currently, only Handlers which take simple Java Objects are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. See [Handler Input/Output Types](https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-req-resp.html) in the official Lambda documentation. 
+To keep the scope simple for POC purposes and the remove the need for third party libraries ie. Jackson, this project only supports Handlers which accept a single parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
 
 ### Building this Runtime
 
