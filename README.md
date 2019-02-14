@@ -24,7 +24,7 @@ The aim of this project is to keep the run time as lean as possible. To aid in t
 * Function code deployments as either Jars or Zip
 * Environment Variables
 
-Using class path scanning we can match the loading process of the offical AWS Java Runtime to load Handler code as either
+Using class path scanning we can match the loading process of the official AWS Java Runtime to load Handler code as either
 a Zip File or a Jar as documented by the official Lambda Docs:
 https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 
@@ -32,19 +32,19 @@ https://docs.aws.amazon.com/lambda/latest/dg/create-deployment-pkg-zip-java.html
 * Asynchronous Invocation ie. Kinesis
 * Advanced Input Types (Lists, Maps, Streams, POJOs)
 * Context Support
-* Congito Identity
+* Cognito Identity
 
-Only Request/Response style Lambda invocations are currently supported. Request/Response style invocations are what you typically find in a serverless application, for example when inoking a Lambda via Api Gateway. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. This project may explore streaming invocation at a later time. 
+Only Request/Response style Lambda invocations are currently supported. Request/Response style invocations are what you typically find in a serverless application, for example when invoking a Lambda via Api Gateway. Alternatively Lambda can be invoked using streaming invocation for example, when invoked by Kinesis, or other services. Streaming invocation is not currently supported in this runtime. This project may explore streaming invocation at a later time. 
 
 Currently, only Handlers which take simple Java Objects are supported. The official AWS runtime supports a multitude of overloaded functions and does some POJO marshalling of Json using Jackson. See [Handler Input/Output Types](https://docs.aws.amazon.com/lambda/latest/dg/java-programming-model-req-resp.html) in the official Lambda documentation. 
 To keep the scope simple for POC purposes and the remove the need for third party libraries ie. Jackson, this project only supports Handlers which accept a single parameter. Adding support for overloads, especially the Context parameter is fairly trivial and will be added later. 
 
 ### Building this Runtime
 
-The following sections describe how to build and assemble a Custom Runtime for AWS Lambda. We will assume a reasonablle familarity with AWS Lambda and Custom Runtimes. Please see the offical AWS Documentation for [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and [AWS Lambda Runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for more details. 
+The following sections describe how to build and assemble a Custom Runtime for AWS Lambda. We will assume a reasonable familiarity with AWS Lambda and Custom Runtimes. Please see the official AWS Documentation for [AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/welcome.html) and [AWS Lambda Runtimes](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html) for more details. 
 
 As mentioned in the Objective, this project will take advantage of the new Java Modules feature (Project Jigsaw) to package the runtime as a stand alone Java image. This has the advantage of vastly reducing the Runtime's footprint as 
-well as simplifying the deployment process. As a result of the new deployment system, Java is no longer required to be pre-installed on the execution environment. The deployment will be compeltley self contained allowing for any version of Java to be deployed on Lambda.
+well as simplifying the deployment process. As a result of the new deployment system, Java is no longer required to be pre-installed on the execution environment. The deployment will be completely self contained allowing for any version of Java to be deployed on Lambda.
 
 Before we start, just a quick note on building stand alone Java images as there are some gotchas. 
 Since we will be basically building an executable, we need to be able to link our modules to the target environment's JDK rather than the JDK of our build environment. Since our intended target is AWS Linux which Amazon uses for Lambda environments, we'll need the modules from the 64bit Linux JDK to link against. If we're compiling on a non-linux system ie. Mac or Windows, we'll need both the JDK for our development environment and the Linux JDK. Otherwise if you link to the wrong architecture you'll get an error when attempt to run the image.
@@ -113,7 +113,7 @@ Add the following commands to the ```bootstrap```
 /opt/dist/bin/bootstrap
 ```
 
-Note that the path we're using in our shell script is ```/opt```. When you create a Lambda Layer, as we'll do shortly, AWS Lambda copies all the runtime files to the ```/opt``` directory. This directory is efficvely the home directory for our custom runtime. 
+Note that the path we're using in our shell script is ```/opt```. When you create a Lambda Layer, as we'll do shortly, AWS Lambda copies all the runtime files to the ```/opt``` directory. This directory is effectively the home directory for our custom runtime. 
 
 ##### Make bootstrap executable
 ```
@@ -204,7 +204,7 @@ NOTE: You'll need to replace the IAM role above with the ARN of your Lambda IAM 
 ##### Attach the Java 11 Runtime Layer
 You'll notice we used ```--runtime provided``` in the command above to tell AWS that we're using a custom runtime. But since we're not packaging our ```bootstrap``` file with our deployment package we'll need to attach the Layer we created earlier which contains our custom runtime to this Lambda Function
 
-For this step you'll need the arn of your Java 11 Custom Runtime Layer and its version nunmber. You should have seen that in the output of the command we used to create it earlier or you can run the following command to list your available layers. You will be able to find the ARN in the response under the field ```LayerVersionArn```
+For this step you'll need the arn of your Java 11 Custom Runtime Layer and its version number. You should have seen that in the output of the command we used to create it earlier or you can run the following command to list your available layers. You will be able to find the ARN in the response under the field ```LayerVersionArn```
 
 ```
 $ aws lambda list-layers
@@ -213,7 +213,7 @@ The ARN for our lambda should look something like this
 
 ```arn:aws:lambda:us-east-1:<account-id>:layer:Java-11:1```
 
-Where account-id is your AWS account and the number on the end is the version of the Layer. Evertime you update or publish a layer that version number will increase. 
+Where account-id is your AWS account and the number on the end is the version of the Layer. Every time you update or publish a layer that version number will increase. 
 
 Now that we have the ARN for our Layer we can update our Lambda function
 ```
@@ -242,7 +242,7 @@ REPORT RequestId: e5f273a6-e2bf-44a6-bacd-c281dfb14061	Init Duration: 427.65 ms	
 I'm a Java handler
 ```
 
-It works! Now you can build Lambda Functions using Java 11. Enjoy!
+You can now build Lambda Functions using Java 11!
 
 
 
